@@ -3,9 +3,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-#loading of the audio file
-audio,sr=librosa.load("sample1.wav")
-
+#loading of the audio file 
+audio,sr=librosa.load("sample3.wav")
+threshold=0.02
+indices=np.where(np.abs(audio)>threshold)[0]
+if len(indices)==0:
+    print("No strong signal detected")
+    exit()
+start=indices[0]
+audio=audio[start:start+40000]
 #basic display
 #print("Sample rate:",sr)
 #print("First 10 samples:",audio[:10])
@@ -28,7 +34,6 @@ index=np.argmax(magnitude)
 
 frequency=index*sr/len(audio)
 
-print("Dominant Frequency is:",frequency)
 A4=440  #reference frequency
 n=12*np.log2(frequency/A4)
 n=round(n)
@@ -37,5 +42,18 @@ notes=["C","C#","D","D#","E","F",
 note_index=(n+9)%12
 note=notes[note_index]
 octave=4+(n+9)//12
+
+#tuning error
+exact_freq=A4*(2**(n/12))
+error=frequency-exact_freq
+if abs(error)<1:
+    status="In Tune"
+elif error>0:
+    status="Sharp"
+else:
+    status="Flat"
+print("Frequency:",frequency)
 print("Detected Note:",note+str(octave))
+print("Error:",round(error,2),"Hz")
+print("Status:",status)
 
