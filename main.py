@@ -4,7 +4,7 @@ import numpy as np
 
 
 #loading of the audio file 
-audio,sr=librosa.load("sample3.wav")
+audio,sr=librosa.load("sample1.wav")
 threshold=0.02
 indices=np.where(np.abs(audio)>threshold)[0]
 if len(indices)==0:
@@ -12,6 +12,7 @@ if len(indices)==0:
     exit()
 start=indices[0]
 audio=audio[start:start+40000]
+history=[]
 #basic display
 #print("Sample rate:",sr)
 #print("First 10 samples:",audio[:10])
@@ -33,6 +34,7 @@ magnitude=magnitude[:half]
 index=np.argmax(magnitude)
 
 frequency=index*sr/len(audio)
+frequency=round(frequency,1)
 
 A4=440  #reference frequency
 n=12*np.log2(frequency/A4)
@@ -52,7 +54,7 @@ elif error>0:
     status="Sharp"
 else:
     status="Flat"
-print("Frequency:",frequency)
+print("Frequency:",frequency,"Hz")
 print("Detected Note:",note+str(octave))
 print("Error:",round(error,2),"Hz")
 print("Status:",status)
