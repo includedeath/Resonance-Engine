@@ -1,50 +1,97 @@
 import numpy as np
 import sounddevice as sd
+import sys
+
+guitar_tuning={"E2":82.41,"A2":110.00,"D3":146.83,
+               "G3":196.00,"B3":246.94,"E4":329.63}
+
+ukulele_tuning={"G4":392.00,"C4":261.63,
+                "E4":329.63,"A4":440.00}
+
+instrument=input("Choose instrument (guitar/ukulele): ").lower()
+if instrument=="g":
+    tuning=guitar_tuning
+elif instrument=="u":
+    tuning=ukulele_tuning
+else:
+    print("Invalid choice")
+    exit()
+
+print("Available strings:",list(tuning.keys()))
+target_note=input("Which string are you tuning? ").upper()
+
+if target_note not in tuning:
+    print("Invalid string")
+    exit()
+
+target_freq=tuning[target_note]
 
 fs=44100
-duration=0.5
-notes=["C","C#","D","D#","E","F",
-       "F#","G","G#","A","A#","B"]
-A4=440
+duration=1
 history=[]
-last_note=None
+
+print(f"\nTuning {target_note} ({target_freq} Hz)")
 print("Real-time tuner started (Ctrl+C to stop)\n")
+
 try:
     while True:
         audio=sd.rec(int(duration*fs),samplerate=fs,channels=1)
         sd.wait()
         audio=audio.flatten()
+        audio=audio*np.hanning(len(audio))
+
         fft=np.fft.fft(audio)
         magnitude=np.abs(fft)
-        half=len(magnitude)//2
-        magnitude=magnitude[:half]
+        magnitude=magnitude[:len(magnitude)//2]
         magnitude[:20]=0
-        index=np.argmax(magnitude)
-        frequency=index*fs/len(audio)
-        if frequency<80: #ignoring low frequency noise
+
+        target_index=int(target_freq*len(audio)/fs)
+        window=80
+
+        start=max(0,target_index-window)
+        end=min(len(magnitude),target_index+window)
+
+        local_segment=magnitude[start:end]
+
+        if np.max(local_segment)<np.mean(magnitude)*2:
             continue
+
+        local_index=np.argmax(local_segment)
+        index=start+local_index
+
+        frequency=index*fs/len(audio)
+
+        if frequency<50:
+            continue
+
         history.append(frequency)
-
-        if len(history)>5:
+        if len(history)>3:
             history.pop(0)
-        frequency=sum(history)/len(history)
-        frequency=round(frequency,1)
-        n=round(12*np.log2(frequency/A4))
-        note_index=(n+9)%12
-        note=notes[note_index]
-        octave=4+(n+9)//12
-        exact_freq=A4*(2**(n/12))
-        error=frequency-exact_freq
-        if abs(error)<1:
-            status="In Tune"
-        elif error>0:
-            status="Sharp"
-        else:
-            status="Flat"
-        current_note=note+str(octave)
-        if current_note!=last_note:
-            print(f"{current_note}|{frequency}Hz|{status}")
-            last_note=current_note
-except KeyboardInterrupt:
-    print("\nStopper tuner")
 
+        frequency=sum(history)/len(history)
+
+        error=frequency-target_freq
+
+        if abs(error)<0.5:
+            status="Perfect"
+            direction=""
+        elif abs(error)<2:
+            status="Good"
+            direction="Tighten" if error<0 else "Loosen"
+        elif error>0:
+            status="Too High"
+            direction="Loosen"
+        else:
+            status="Too Low"
+            direction="Tighten"
+
+        if direction:
+            msg=f"{status} ({direction})"
+        else:
+            msg=status
+
+        sys.stdout.write(f"\r{round(frequency,1)} Hz | {msg}")
+        sys.stdout.flush()
+
+except KeyboardInterrupt:
+    print("\nStopped tuner")
