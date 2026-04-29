@@ -29,17 +29,20 @@ target_freq=tuning[target_note]
 fs=44100
 duration=1
 
-# ---------------- UI ----------------
+# -------- UI --------
 root=tk.Tk()
 root.title("Tuner")
+root.configure(bg="black")
 
-label_note=tk.Label(root,text=f"Tuning {target_note}",font=("Arial",18))
-label_note.pack()
+label_note=tk.Label(root,text=f"Tuning {target_note}",
+                    font=("Arial",18),bg="black",fg="white")
+label_note.pack(pady=10)
 
-label_freq=tk.Label(root,text="0 Hz",font=("Arial",16))
-label_freq.pack()
+label_freq=tk.Label(root,text="0 Hz",
+                    font=("Arial",16),bg="black",fg="white")
+label_freq.pack(pady=5)
 
-canvas=tk.Canvas(root,width=400,height=100)
+canvas=tk.Canvas(root,width=400,height=120,bg="black",highlightthickness=0)
 canvas.pack()
 
 center_line=200
@@ -48,24 +51,25 @@ def update_ui(frequency):
     canvas.delete("all")
 
     error=frequency-target_freq
-
-    # scale movement
     pos=center_line+(error*5)
 
-    if pos<0: pos=0
-    if pos>400: pos=400
+    if pos<0:
+        pos=0
+    if pos>400:
+        pos=400
 
-    # center line
-    canvas.create_line(center_line,0,center_line,100,fill="green",width=2)
+    # center (perfect)
+    canvas.create_line(center_line,0,center_line,120,fill="#00ff88",width=3)
 
-    # moving pointer
-    canvas.create_line(pos,0,pos,100,fill="red",width=4)
+    # pointer
+    color="#00ff88" if abs(error)<0.5 else "#ff4444"
+    canvas.create_line(pos,0,pos,120,fill=color,width=5)
 
     label_freq.config(text=f"{round(frequency,1)} Hz")
 
     root.update()
 
-# ---------------- AUDIO LOOP ----------------
+# -------- AUDIO --------
 def detect():
     audio=sd.rec(int(duration*fs),samplerate=fs,channels=1)
     sd.wait()
