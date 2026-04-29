@@ -28,6 +28,7 @@ target_freq=tuning[target_note]
 
 fs=44100
 duration=1
+current_pos=200
 
 # -------- UI --------
 root=tk.Tk()
@@ -50,20 +51,30 @@ center_line=200
 def update_ui(frequency):
     canvas.delete("all")
 
+    global current_pos
     error=frequency-target_freq
-    pos=center_line+(error*5)
+    target_pos=center_line+(error*5)
+    if target_pos<0:
+        target_pos=0
+    if target_pos>400:
+        target_pos=400
+    
+    diff=target_pos-current_pos
+    if abs(diff>50):
+        factor=1
+    elif abs(diff)>20:
+        factor=0.75
+    else:
+        factor=0.5
 
-    if pos<0:
-        pos=0
-    if pos>400:
-        pos=400
+    current_pos=current_pos+diff*factor
 
     # center (perfect)
     canvas.create_line(center_line,0,center_line,120,fill="#00ff88",width=3)
 
     # pointer
-    color="#00ff88" if abs(error)<0.5 else "#ff4444"
-    canvas.create_line(pos,0,pos,120,fill=color,width=5)
+    color="#00ff88" if abs(error)<2 else "#ff4444"
+    canvas.create_line(current_pos,0,current_pos,120,fill=color,width=5)
 
     label_freq.config(text=f"{round(frequency,1)} Hz")
 
