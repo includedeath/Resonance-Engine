@@ -30,7 +30,7 @@ fs=44100
 duration=1
 current_pos=200
 
-# -------- UI --------
+#UI
 root=tk.Tk()
 root.title("Tuner")
 root.configure(bg="black")
@@ -60,7 +60,7 @@ def update_ui(frequency):
         target_pos=400
     
     diff=target_pos-current_pos
-    if abs(diff>50):
+    if abs(diff)>50:
         factor=1
     elif abs(diff)>20:
         factor=0.75
@@ -69,10 +69,10 @@ def update_ui(frequency):
 
     current_pos=current_pos+diff*factor
 
-    # center (perfect)
+    #center (perfect)
     canvas.create_line(center_line,0,center_line,120,fill="#00ff88",width=3)
 
-    # pointer
+    #pointer
     color="#00ff88" if abs(error)<2 else "#ff4444"
     canvas.create_line(current_pos,0,current_pos,120,fill=color,width=5)
 
@@ -80,7 +80,7 @@ def update_ui(frequency):
 
     root.update()
 
-# -------- AUDIO --------
+#AUDIO
 def detect():
     audio=sd.rec(int(duration*fs),samplerate=fs,channels=1)
     sd.wait()
