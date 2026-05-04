@@ -4,6 +4,7 @@ from chorddict import detect_chord
 
 fs=44100
 duration=1
+history=[]
 
 notes=["C","C#","D","D#","E","F",
        "F#","G","G#","A","A#","B"]
@@ -27,8 +28,12 @@ def detect():
     magnitude=magnitude[:len(magnitude)//2]
 
     magnitude[:20]=0
+    max_freq=1200
+    max_index=int(max_freq*len(audio)/fs)
+    magnitude=magnitude[:max_index]
 
-    indices=np.argsort(magnitude)[-10:]
+    threshold=max(magnitude)*0.3
+    indices=np.where(magnitude>threshold)[0]
 
     freqs=[]
     for i in indices:
@@ -38,28 +43,34 @@ def detect():
 
     filtered=[]
     for f in sorted(freqs):
-        if all(abs(f-2*x)>5 for x in filtered):
+        if all(abs(f/x-round(f/x))>0.1 for x in filtered):
             filtered.append(f)
+    filtered=filtered[:4]
 
     return filtered
 
 print("Play a chord... Press Ctrl+C to stop\n")
+print(detect_chord(["C","E"]))
 
 try:
     while True:
         freqs=detect()
 
         if freqs:
-            freqs=[round(f,1) for f in freqs]
             notes_detected=[freq_to_note(f) for f in freqs]
-
             notes_simple=[n[:-1] for n in notes_detected]
-            notes_simple=list(set(notes_simple))
 
-            chord=detect_chord(notes_simple)
+            history.append(notes_simple)
+            if len(history)>5:
+                history.pop(0)
 
-            print("Notes:",notes_simple)
-            print("Chord:",chord)
+            all_notes=[n for h in history for n in h]
+            notes_simple=list(set(all_notes))
+
+            chord,confidence=detect_chord(notes_simple)
+
+            print("\nNotes:",notes_simple)
+            print("Chord:",chord,"| Confidence:",confidence)
 
 except KeyboardInterrupt:
     print("\nStopped")

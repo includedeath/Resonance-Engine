@@ -9,10 +9,19 @@ chords={
 }
 
 def detect_chord(notes):
-    detected_set=frozenset(notes)
+    detected_set=set(notes)
+
+    best_match="Unknown"
+    best_score=0
 
     for chord_notes,chord_name in chords.items():
-        if chord_notes.issubset(detected_set):
-            return chord_name
+        match_count=len(chord_notes.intersection(detected_set))
+        score=match_count/len(chord_notes)
+        if score>best_score:
+            best_score=score
+            best_match=chord_name
 
-    return "Unknown"
+    if best_score>=0.6:
+        return best_match,round(best_score,2)
+    else:
+        return "Unknown",round(best_score,2)
